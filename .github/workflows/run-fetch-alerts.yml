@@ -3,7 +3,7 @@ name: Run Fetch Alerts Every 30 Minutes
 
 on:
   schedule:
-    - cron: '*/30 * * * *'  # Every 30 minutes (UTC)
+    - cron: '*/30 * * * *' # Every 30 minutes (UTC)
   workflow_dispatch:
 
 jobs:
@@ -12,5 +12,5 @@ jobs:
     steps:
       - name: Call Supabase Function
         run: |
-          curl -X POST "https://yfczbiqljmjxkunndlif.supabase.co/functions/v1/fetch-alerts" \
+          curl -X POST curl -X POST "crypto-trader-git-main-defiantlynicks-projects.vercel.app/api/fetch-alerts" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"

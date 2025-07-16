@@ -6,5 +6,7 @@ create table alerts (
   funding numeric,
   oi_change numeric,
   recommendation text,
+  stop_loss numeric,
+  take_profit numeric,
   created_at timestamptz default now()
 );
