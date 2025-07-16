@@ -1,0 +1,16 @@
+# .github/workflows/run-fetch-alerts.yml
+name: Run Fetch Alerts Every 30 Minutes
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Every 30 minutes (UTC)
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Supabase Function
+        run: |
+          curl -X POST "https://yfczbiqljmjxkunndlif.supabase.co/functions/v1/fetch-alerts" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
