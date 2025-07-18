@@ -18,3 +18,12 @@ create table alert_settings (
   enabled boolean default true,
   created_at timestamptz default now()
 );
+
+create table logs (
+  id uuid primary key default gen_random_uuid(),
+  timestamp timestamptz default now(),
+  level text not null,           -- e.g. 'info', 'warn', 'error'
+  message text not null,
+  coin text,                    -- optional: which coin this relates to
+  details jsonb                 -- optional: extra structured data
+);

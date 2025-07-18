@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
 import { Alert } from "@/lib/database.types";
+import { logEvent } from "./utils";
 
 const coins = ["bitcoin", "ethereum", "chainlink"];
 const COINGECKO_URL = "https://api.coingecko.com/api/v3/simple/price";
@@ -38,7 +39,7 @@ async function fetchPrice(coin: string): Promise<{ price: number, error?: string
     const json = await res.json();
     if (json[coin]) return { price: json[coin][vsCurrency.toLowerCase()] };
     throw new Error("CoinGecko malformed data");
-  } catch (e) {
+  } catch {
     console.warn(`🟡 CoinGecko failed for ${coin}, trying CoinCap...`);
   }
 
@@ -124,8 +125,14 @@ export async function POST() {
 
   for (const coin of coins) {
     const { price, error } = await fetchPrice(coin);
+    if (error) {
+      console.error(`❌ Failed to fetch price for ${coin}:`, error);
+      await logEvent("error", `Failed to fetch price for ${coin}`, coin, { error });
+      continue;
+    }
 
     if (!price || price <= 0) {
+      await logEvent("error", `Price for ${coin} is null or -0`, coin, { error: "Price is null or -0" });
       await supabase.from("alerts").insert([
         {
           coin,
@@ -141,8 +148,10 @@ export async function POST() {
       continue;
     }
 
-    const { recommendation, stop_loss, take_profit } = generateRecommendation(price);
+    console.log(`✅ Fetched price for ${coin}: $${price}`);
+    await logEvent("info", `Fetched price for ${coin}`, coin, { price });
 
+    const { recommendation, stop_loss, take_profit } = generateRecommendation(price);
     await supabase.from("alerts").insert([
       {
         coin,
