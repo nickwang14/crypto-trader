@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/fetch-alerts.ts": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "cron": [
+    {
+      "path": "/api/fetch-alerts",
+      "schedule": "*/30 * * * *"
+    }
+  ]
+}
