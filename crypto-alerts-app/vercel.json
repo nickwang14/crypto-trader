@@ -1,13 +1,8 @@
 {
   "functions": {
-    "api/fetch-alerts.ts": {
-      "runtime": "nodejs18.x"
+    "api/cron/price-alerts.ts": {
+      "runtime": "edge",
+      "schedule": "0,30 * * * *"
     }
-  },
-  "cron": [
-    {
-      "path": "/api/fetch-alerts",
-      "schedule": "*/30 * * * *"
-    }
-  ]
+  }
 }
