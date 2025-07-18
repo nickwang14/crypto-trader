@@ -83,6 +83,51 @@ function generateRecommendation(price: number) {
 }
 
 export async function POST() {
+  // Load settings from Supabase
+  const { data: settings, error } = await supabase
+    .from("alert_settings")
+    .select("*")
+    .eq("enabled", true);
+
+  if (error || !settings || settings.length === 0) {
+    console.error("⚠️ Failed to fetch alert settings:", error);
+    return NextResponse.json({ status: "error", message: "No alert settings found" });
+  }
+
+  for (const { coin, min_price, max_price } of settings) {
+    if (!coin) {
+        console.warn(`🔕 Skipping empty coin setting`);
+        continue;
+      }
+    const { price, error } = await fetchPrice(coin);
+    if (error) {
+        console.error(`❌ Failed to fetch price for ${coin}:`, error);
+        continue;
+    }
+
+    if (!price || price <= 0) continue;
+
+    // Optional: skip if price is outside of threshold
+    if ((min_price && price < min_price) || (max_price && price > max_price)) {
+      console.log(`🔕 ${coin} price $${price} is out of range (${min_price}-${max_price})`);
+      continue;
+  }
+
+  const { recommendation, stop_loss, take_profit } = generateRecommendation(price);
+
+  await supabase.from("alerts").insert([
+    {
+      coin,
+      price,
+      funding: 0,
+      oi_change: 0,
+      recommendation,
+      stop_loss,
+      take_profit,
+    }
+  ]);
+}
+
   for (const coin of coins) {
     const { price, error } = await fetchPrice(coin);
 
