@@ -3,11 +3,16 @@ import { supabase } from "@/lib/supabaseClient";
 import { Alert } from "@/lib/database.types";
 import { logEvent } from "./utils";
 
-const coins = ["bitcoin", "ethereum", "chainlink"];
 const COINGECKO_URL = "https://api.coingecko.com/api/v3/simple/price";
 const COINCAP_URL = "https://api.coincap.io/v2/assets";
 const CRYPTOCOMPARE_URL = "https://min-api.cryptocompare.com/data/price";
 const COINPAPRIKA_URL = "https://api.coinpaprika.com/v1/tickers";
+
+const symbolMap: Record<string, string> = {
+  bitcoin: "BTC",
+  ethereum: "ETH",
+  chainlink: "LINK"
+};
 
 async function handleRateLimit(res: Response) {
   if (res.status === 429) {
@@ -18,12 +23,6 @@ async function handleRateLimit(res: Response) {
 }
 
 async function fetchPrice(coin: string): Promise<{ price: number, error?: string }> {
-  const symbolMap: Record<string, string> = {
-    bitcoin: "BTC",
-    ethereum: "ETH",
-    chainlink: "LINK"
-  };
-
   const vsCurrency = "USD";
   const symbol = symbolMap[coin];
 
@@ -97,42 +96,14 @@ export async function POST() {
 
   for (const { coin } of settings) {
     if (!coin) {
-        console.warn(`🔕 Skipping empty coin setting`);
-        continue;
-      }
-    const { price, error } = await fetchPrice(coin);
-    if (error) {
-        console.error(`❌ Failed to fetch price for ${coin}:`, error);
-        continue;
+      console.warn("🔕 Skipping empty coin");
+      continue;
     }
 
-    if (!price || price <= 0) continue;
-
-  const { recommendation, stop_loss, take_profit } = generateRecommendation(price);
-
-  await supabase.from("alerts").insert([
-    {
-      coin,
-      price,
-      funding: 0,
-      oi_change: 0,
-      recommendation,
-      stop_loss,
-      take_profit,
-    }
-  ]);
-}
-
-  for (const coin of coins) {
     const { price, error } = await fetchPrice(coin);
     if (error) {
       console.error(`❌ Failed to fetch price for ${coin}:`, error);
       await logEvent("error", `Failed to fetch price for ${coin}`, coin, { error });
-      continue;
-    }
-
-    if (!price || price <= 0) {
-      await logEvent("error", `Price for ${coin} is null or -0`, coin, { error: "Price is null or -0" });
       await supabase.from("alerts").insert([
         {
           coin,
@@ -142,7 +113,7 @@ export async function POST() {
           recommendation: "DATA_ERROR",
           stop_loss: 0,
           take_profit: 0,
-          note: error || "Unknown error"
+          note: error
         }
       ]);
       continue;
@@ -152,6 +123,7 @@ export async function POST() {
     await logEvent("info", `Fetched price for ${coin}`, coin, { price });
 
     const { recommendation, stop_loss, take_profit } = generateRecommendation(price);
+
     await supabase.from("alerts").insert([
       {
         coin,
