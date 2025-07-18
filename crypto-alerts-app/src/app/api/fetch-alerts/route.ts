@@ -94,7 +94,7 @@ export async function POST() {
     return NextResponse.json({ status: "error", message: "No alert settings found" });
   }
 
-  for (const { coin, min_price, max_price } of settings) {
+  for (const { coin } of settings) {
     if (!coin) {
         console.warn(`🔕 Skipping empty coin setting`);
         continue;
@@ -106,12 +106,6 @@ export async function POST() {
     }
 
     if (!price || price <= 0) continue;
-
-    // Optional: skip if price is outside of threshold
-    if ((min_price && price < min_price) || (max_price && price > max_price)) {
-      console.log(`🔕 ${coin} price $${price} is out of range (${min_price}-${max_price})`);
-      continue;
-  }
 
   const { recommendation, stop_loss, take_profit } = generateRecommendation(price);
 
